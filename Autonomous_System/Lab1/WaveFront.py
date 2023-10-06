@@ -4,18 +4,6 @@ class WaveFrontAlgo():
     def __init__(self) -> None:
         pass
 
-    # def isValid(self,index, map):
-    #         try:
-    #             if index[0] < 0 or index[1] < 0:
-    #                 return False
-    #            # print(map[index[0],index[1]] )
-    #             if map[index[0],index[1]] == 0:
-    #                 return True
-    #             else:
-    #                 return False
-    #         except:
-    #              return False
-            
     def isOutofBound(self,index, map):
         try: #Check out of bound for exceeded index
             if index[0] < 0 or index[1] < 0 or index[0]>=map.shape[0] or index[1]>=map.shape[1]: #Check out of bound for -1 index
