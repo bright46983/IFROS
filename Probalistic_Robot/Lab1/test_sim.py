@@ -37,8 +37,8 @@ if __name__== '__main__':
     kSteps = 100000000
     try:
         for i in range(kSteps):
-            desired_vel = moveCircle(desired_vel_x,desired_radius)
-            #desired_vel = move8(desired_vel_x,desired_radius,robot,previous_vel)
+            #desired_vel = moveCircle(desired_vel_x,desired_radius)
+            desired_vel = move8(desired_vel_x,desired_radius,robot,previous_vel)
             current_state = robot.fs(current_state,desired_vel)
             previous_vel = desired_vel
             time.sleep(0.0001)
