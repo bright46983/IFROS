@@ -68,7 +68,7 @@ class Localization:
         for self.k in range(self.kSteps):
             xsk = self.robot.fs(xsk_1, usk)  # Simulate the robot motion
 
-            uk = self.GetInput()  # Get the input from the robot
+            uk = self.GetInput() # Get the input from the robot
             self.xk = self.Localize(xk_1,uk)  # Localize the robot
 
             xsk_1 = xsk  # current state becomes previous state for next iteration
@@ -114,3 +114,5 @@ class Localization:
             self.yTraj.append(xk[1, 0])
             self.trajectory.pop(0).remove()
             self.trajectory = plt.plot(self.xTraj, self.yTraj, marker='.', color='blue', markersize=1)
+
+    

@@ -65,7 +65,7 @@ class DifferentialDriveSimulatedRobot(SimulatedRobot):
 
         # Initialize the sensor simulation
         self.encoder_reading_frequency = 1  # frequency of encoder readings
-        self.Re= np.diag(np.array([22 ** 2, 22 ** 2]))  # covariance of simulated wheel encoder noise
+        self.Re= np.diag(np.array([0 ** 2, 0 ** 2]))  # covariance of simulated wheel encoder noise
 
         self.Polar2D_feature_reading_frequency = 50  # frequency of Polar2D feature readings
         self.Polar2D_max_range = 50  # maximum Polar2D range, used to simulate the field of view
@@ -113,7 +113,7 @@ class DifferentialDriveSimulatedRobot(SimulatedRobot):
         vel_1 = Pose3D(np.array([[xsk_1[3,0]], [xsk_1[4,0]],[xsk_1[5,0]]]))
 
         usk = Pose3D(np.array([[usk[0,0]], [0],[usk[1,0]]]))
-        wsk = np.random.multivariate_normal([0,0,0],self.Qsk).reshape(3,1)
+        wsk = np.random.multivariate_normal([0.0,0,0.0],self.Qsk).reshape(3,1)
        
         k = 1
         K = np.array([[k, 0, 0],
@@ -122,7 +122,6 @@ class DifferentialDriveSimulatedRobot(SimulatedRobot):
 
         xsk_upper = pos_1.oplus((vel_1*self.dt) + 0.5*wsk*(self.dt)**2)
         xsk_lower = (vel_1 + np.matmul(K, usk- vel_1)+ wsk*self.dt)
-        
         xsk = np.array([[xsk_upper[0,0]],
                         [xsk_upper[1,0]],
                         [xsk_upper[2,0]],
@@ -161,11 +160,13 @@ class DifferentialDriveSimulatedRobot(SimulatedRobot):
         v_L = v_x - (w*(self.wheelBase/2))
         v_R = v_x + (w*(self.wheelBase/2))
 
+
         n_L = (v_L*self.dt) / (2*np.pi*self.wheelRadius/self.pulse_x_wheelTurns)
         n_R = (v_R*self.dt) / (2*np.pi*self.wheelRadius/self.pulse_x_wheelTurns)
         zsk = np.array([[n_L],[n_R]])
-        Rsk = np.array([[self.Re[0]**2, 0],
-                       [0               ,self.Re[0]**2]])
+        noise = np.random.multivariate_normal([0.0,0.0],self.Re).reshape(2,1)
+        zsk = zsk + noise
+        Rsk = self.Re
         return zsk, Rsk
 
     def ReadCompass(self):

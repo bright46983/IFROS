@@ -32,16 +32,21 @@ class DR_3DOFDifferentialDrive(Localization):
         # Store previous state and input for Logging purposes
         self.etak_1 = xk_1  # store previous state
         self.uk = uk  # store input
-
+   
         # TODO: to be completed by the student
-        dl = uk[0] * 2 * np.pi * self.wheelRadius / self.robot.pulse_x_wheelTurns
-        dr = uk[1] * 2 * np.pi * self.wheelRadius / self.robot.pulse_x_wheelTurns
+        d_L = uk[0] * 2 * np.pi * self.wheelRadius / self.robot.pulse_x_wheelTurns
+        d_R = uk[1] * 2 * np.pi * self.wheelRadius / self.robot.pulse_x_wheelTurns
 
-        d = (dr + dl) / 2
-        theta = xk_1[2, 0] + np.arctan2((dr - dl), self.wheelBase) 
-        xk = (np.array([[xk_1[0, 0] + d * np.cos(theta)],
-                              [xk_1[1, 0] + d * np.sin(theta)],
-                              [theta]]))
+        v_L = d_L / self.dt
+        v_R = d_R /self.dt
+
+        vx = (v_L + v_R)/2
+        w = (v_R - v_L)/self.wheelBase
+        v = np.array([[vx],[0],[w]])
+
+        xk = xk_1.oplus(v*self.dt)
+        
+        
         return xk
 
     def GetInput(self):
@@ -52,6 +57,7 @@ class DR_3DOFDifferentialDrive(Localization):
         """
 
         # TODO: to be completed by the student
-        return self.robot.readEncoder()
+        uk,_ = self.robot.ReadEncoders()
+        return uk
         
 

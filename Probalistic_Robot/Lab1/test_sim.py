@@ -41,6 +41,8 @@ if __name__== '__main__':
             desired_vel = move8(desired_vel_x,desired_radius,robot,previous_vel)
             current_state = robot.fs(current_state,desired_vel)
             previous_vel = desired_vel
+            n,R = robot.ReadEncoders()
+            print(R)
             time.sleep(0.0001)
     except KeyboardInterrupt:
         print('interrupted!')
