@@ -27,15 +27,7 @@ image2filename = 'imgl01396.jpg';
 image1filename = 'Img00001_small.jpg';
 image2filename = 'Img00025_small.jpg';
 % 
-% image1filename = 'Img00.4:0.05:0.9
-    [CL1uv,CL2uv,loc1,des1,loc2,des2] = matchsiftmodif(image1filename, image2filename, distRatio, drawMatches);
-       
-    errorVec = projectionerrorvec(H12,CL1uv,CL2uv);
-    
-    
-    if isempty(errorVec)
-        disp('No features were associated');
-    else0025_small.jpg';
+% image1filename = 'Img00025_small.jpg';
 % image2filename = 'Img00320_small.jpg';
 
 [image1, descriptors1, loc1] = siftprecomputed(image1filename);

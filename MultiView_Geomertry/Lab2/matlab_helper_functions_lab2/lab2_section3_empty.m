@@ -22,7 +22,7 @@ I1 = imread(image1filename);
 I2 = imread(image2filename);
 
 % Do feature association with the modified match.m function
-distRatio = 0.8;
+distRatio = 0.4;
 drawMatches = true;
 [CL1uv,CL2uv,loc1,des1,loc2,des2] = matchsiftmodif(image1filename, image2filename, distRatio, drawMatches);
 
@@ -43,7 +43,7 @@ maxRepErrorStack = [];
 numPointsStack = [];
 numPointsOverThresholdStack = []; 
 
-for distRatio = 0.4:0.05:0.9
+for distRatio = 0.1:0.05:0.4
     [CL1uv,CL2uv,loc1,des1,loc2,des2] = matchsiftmodif(image1filename, image2filename, distRatio, drawMatches);
        
     errorVec = projectionerrorvec(H12,CL1uv,CL2uv);
@@ -76,5 +76,11 @@ semilogy(distRatioStack,avgRepErrorStack,distRatioStack,maxRepErrorStack,distRat
 xlabel('Distance Ratio');
 ylabel('Error and Num Matches (log scale)');
 legend('Avg Rep Error','Max Rep Error','Num Matches','Num matches > dist threshold');
+H12
+H13 = computeHomographyEmpty(CL1uv,CL2uv,'Projective')
+errorVec = projectionerrorvec(H13,CL1uv,CL2uv);
+
+
+% RANSAC
 
 
