@@ -5,7 +5,7 @@ import matplotlib.animation as anim
 
 # Robot definition
 d_init = np.zeros(2)           # displacement along Z-axis
-q_init = np.array([0.2, 0.5])  # rotation around Z-axis (theta)
+q_init = np.array([[0.2, 0.5],[0.2, 0.5],[0.2, 0.5]])  # rotation around Z-axis (theta)
 a_init = np.array([0.75, 0.5]) # displacement along X-axis
 alpha_init = np.zeros(2)       # rotation around X-axis 
 d = d_init
@@ -14,8 +14,9 @@ a = a_init
 alpha = alpha_init
 revolute = [True, True]
 sigma_d = np.array([0.3, 0.8])
-K = np.diag([1, 1])
-current_controller = "transpose"
+K = np.diag([1, 1]) * 3
+controller_list =  ["transpose","inverse","DLS"] 
+current_controller = 0 # index of current controller
 
 
 
@@ -35,7 +36,7 @@ PPx = []
 PPy = []
 
 # Error Plotting
-norm_err = {"transpose":[], "inverse":[],"DLS":[]}
+norm_err = [[],[],[]]
 timestamp = []
 
 # Simulation initialization
@@ -47,23 +48,31 @@ def init():
 
 # Simulation loop
 def simulate(t):
-    global d, q, a, alpha, revolute, sigma_d
+    global d, q, a, alpha, revolute, sigma_d, norm_err
     global PPx, PPy
 
     # Update robot
-    T = kinematics(d, q, a, alpha)
-    J = jacobian(T, revolute)
-    P = robotPoints2D(T)
+    T = [kinematics(d, q[i], a, alpha) for i in range(len(controller_list))] 
+    J = [jacobian(T[i], revolute) for i in range(len(controller_list))]
+    P = [robotPoints2D(T[i]) for i in range(len(controller_list))]
 
     # Update control
-    sigma = np.array([P[0,-1], P[1,-1]])    # Position of the end-effector
-    err =   sigma_d - sigma   # Control error (position error)
+    sigma = [np.array([P[i][0,-1], P[i][1,-1]]) for i in range(len(controller_list))]    # Position of the end-effector
+    err =   [sigma_d - sigma[i] for i in range(len(controller_list))]   # Control error (position error)
+    
     
     # Control solutions
-    dq = controller(current_controller, J)[:,0:2] @ (K @ err)    
-    q += dt * dq
+    dq = [controller(controller_list[i], J[i])[:,0:2] @ (K @ err[i]) for i in range(len(controller_list)) ]  
+
+    for i in range(len(controller_list)):
+        q[i] += dt * dq[i]
+        #Error Poltting Elements
+        norm_err[i].append(np.linalg.norm(err[i]))  # Norm error
+
+    timestamp.append(t)
 
     # Update drawing
+    P = robotPoints2D(T[0])
     line.set_data(P[0,:], P[1,:])
     PPx.append(P[0,-1])
     PPy.append(P[1,-1])
@@ -87,15 +96,17 @@ def controller(type, J):
 def plot_summary():
     # Evolution of joint positions Plotting
     fig_joint = plt.figure()
-    ax = fig.add_subplot(222, autoscale_on=True)
+    ax = fig_joint.add_subplot(111, autoscale_on=False, xlim=(0, 10), ylim=(0,1.1))
     ax.set_title('joint positions')
     ax.set_xlabel('Time[s]')
     ax.set_ylabel('Error[m]')
-    ax.set_aspect('equal')
     ax.grid()
-    plt.plot(timestamp,norm_err["transpose"],label='transpose')
-    plt.plot(timestamp,norm_err["inverse"],label='psudoinverse')
-    plt.plot(timestamp,norm_err["DLS"],label='DLS')
+    plt.plot(timestamp,norm_err[0],label='transpose')
+    plt.plot(timestamp,norm_err[1],label='psudoinverse')
+    plt.plot(timestamp,norm_err[2],label='DLS')
+
+    ax.legend()
+
     plt.show()
 
 # Run simulation

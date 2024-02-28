@@ -66,15 +66,17 @@ def simulate(t):
 def plot_summary():
     # Evolution of joint positions Plotting
     fig_joint = plt.figure()
-    ax = fig.add_subplot(222, autoscale_on=True)
+    ax = fig_joint.add_subplot(111, autoscale_on=False,xlim=(0, 10), ylim=(0,10))
     ax.set_title('joint positions')
     ax.set_xlabel('Time[s]')
     ax.set_ylabel('Angle[rad]')
-    ax.set_aspect('equal')
     ax.grid()
     plt.plot(timestamp,q1,label='q1')
     plt.plot(timestamp,q2,label='q2')
+    ax.legend()
+
     plt.show()
+    
 
 
 # Run simulation
