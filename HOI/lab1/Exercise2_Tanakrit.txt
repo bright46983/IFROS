@@ -64,8 +64,8 @@ def simulate(t):
 
     timestamp.append(t)
 
-    # Update drawing 
-    P = robotPoints2D(T[1]) 
+    # Update drawing (Only show the first solution [0])
+    P = robotPoints2D(T[2]) 
     line.set_data(P[0,:], P[1,:])
     PPx.append(P[0,-1])
     PPy.append(P[1,-1])
