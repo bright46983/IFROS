@@ -52,12 +52,13 @@ def simulate(t):
     J = jacobian(T, revolute)
     
     # Update control
-    sigma =                  # Current position of the end-effector
-    err =                    # Error in position
-    Jbar =                   # Task Jacobian
-    P =                      # Null space projector
-    y =                      # Arbitrary joint velocity
-    dq =                     # Control signal
+    sigma =   T[-1][0:2,-1].reshape(2,1)           # Current position of the end-effector
+    err =   sigma_d - sigma                 # Error in position
+    Jbar = jacobian(T, revolute)[:2,:]                   # Task Jacobian
+    Jinv = np.linalg.pinv(J[:2,:])
+    P =  np.eye(3) - (Jinv @ Jbar)                    # Null space projector
+    y =  np.array([np.sin(t),np.cos(t),np.sin(t)])            # Arbitrary joint velocity
+    dq =  (Jinv @ err) + (P @ y)                   # Control signal
     q = q + dt * dq # Simulation update
 
     # Update drawing
