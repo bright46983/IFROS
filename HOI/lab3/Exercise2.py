@@ -1,0 +1,152 @@
+# Import necessary libraries
+from lab2_robotics import *  # Includes numpy import
+import matplotlib.pyplot as plt
+import matplotlib.animation as anim
+
+# Robot definition (3 revolute joint planar manipulator)
+d = np.zeros(3)  # displacement along Z-axis
+q = np.array([0, np.pi / 4, np.pi / 4]).reshape(3, 1)  # rotation around Z-axis (theta)
+alpha = np.zeros(3)  # displacement along X-axis
+a = np.array([0.75, 0.5, 0.5])  # rotation around X-axis
+revolute = [True, True, True]  # flags specifying the type of joints
+K1 = np.diag([1, 1])
+K2 = np.array([1])
+vel_threshold = 0.8
+# Desired values of task variables
+sigma1_d = np.array([0.0, 1.0]).reshape(2, 1)  # Position of the end-effector
+sigma2_d = np.array([[0.0]])  # Position of joint 1
+
+# Simulation params
+dt = 1.0 / 60.0
+Tt = 10  # Total simulation time
+tt = np.arange(0, Tt, dt)  # Simulation time vector
+
+# Drawing preparation
+fig = plt.figure()
+ax = fig.add_subplot(111, autoscale_on=False, xlim=(-2, 2), ylim=(-2, 2))
+ax.set_title("Simulation")
+ax.set_aspect("equal")
+ax.set_xlabel("x[m]")
+ax.set_ylabel("y[m]")
+ax.grid()
+line, = ax.plot([], [], "o-", lw=2)  # Robot structure
+path, = ax.plot([], [], "c-", lw=1)  # End-effector path
+point, = ax.plot([], [], "rx")  # Target
+PPx = []
+PPy = []
+err1_plot = []
+err2_plot = []
+timestamp = []
+last_time = 0
+
+control_priority = "END-EFFECTOR POSITION"
+# control_priority = "JOINT 1 POSITION"
+
+
+# Simulation initialization
+def init():
+    global sigma1_d, last_time
+    line.set_data([], [])
+    path.set_data([], [])
+    point.set_data([], [])
+    last_time = timestamp[-1] if timestamp else 0
+    sigma1_d = np.random.uniform(-1, 1, size=(2, 1))
+    return line, path, point
+
+
+# Simulation loop
+def simulate(t):
+    global q, a, d, alpha, revolute, sigma1_d, sigma2_d
+    global PPx, PPy, last_time
+
+    # Update robot
+    T = kinematics(d, q.flatten(), a, alpha)
+    J = jacobian(T, revolute)
+
+    # Update control
+    if control_priority == "END-EFFECTOR POSITION":
+        # TASK 1
+        sigma1 = T[-1][0:2, -1].reshape(2, 1)  # Current position of the end-effector
+        err1 = sigma1_d - sigma1  # Error in Cartesian position
+        J1 = J[:2, :]  # Jacobian of the first task
+        Jinv = DLS(J1, 0.1)
+        P1 = np.eye(3) - (np.linalg.pinv(J1) @ J1)  # Null space projectorJinv
+
+        # TASK 2
+        sigma2 = q[0]  # Current position of joint 1
+        err2 = sigma2_d - sigma2  # Error in joint position
+        J2 = np.array([1, 0, 0]).reshape(1, 3)  # Jacobian of the second task
+        J2bar = J2 @ P1  # Augmented Jacobian
+        # Combining tasks
+        dq1 = (Jinv @ (err1)).reshape(3, 1)  # Velocity for the first task
+        dq12 = dq1 + (DLS(J2bar, 0.1) @ (err2 - J2 @ dq1))  # Velocity for both tasks
+
+    elif control_priority == "JOINT 1 POSITION":
+        # TASK 1
+        sigma2 = q[0]  # Current position of joint 1
+        err2 = sigma2_d - sigma2  # Error in joint position
+        J1 = np.array([1, 0, 0]).reshape(1, 3)  # Jacobian of the second task
+        Jinv = DLS(J1, 0.1)  # Augmented Jacobian
+        P1 = np.eye(3) - (np.linalg.pinv(J1) @ J1)  # Null space projectorJinv
+
+        # TASK 2
+        sigma1 = T[-1][0:2, -1].reshape(2, 1)  # Current position of the end-effector
+        err1 = sigma1_d - sigma1  # Error in Cartesian position
+        J2 = J[:2, :]  # Jacobian of the first task
+        J2bar = J2 @ P1
+
+        # Combining tasks
+        dq1 = (Jinv @ (err2)).reshape(3, 1)  # Velocity for the first task
+        dq12 = dq1 + (DLS(J2bar, 0.1) @ (err1 - J2 @ dq1))  # Velocity for both tasks
+
+    # Scale velocity
+    max_vel = np.max(np.abs([dq1, dq12]))
+    if max_vel > vel_threshold:
+        dq12 = dq12 / max_vel * vel_threshold
+
+    q = q + dq12 * dt  # Simulation update
+
+    # Update drawing
+    PP = robotPoints2D(T)
+    line.set_data(PP[0, :], PP[1, :])
+    PPx.append(PP[0, -1])
+    PPy.append(PP[1, -1])
+    path.set_data(PPx, PPy)
+    point.set_data(sigma1_d[0], sigma1_d[1])
+
+    # Update Poltting Data
+    err1_plot.append(np.linalg.norm(err1))
+    err2_plot.append(np.linalg.norm(err2))
+    timestamp.append(t + last_time)
+
+    return line, path, point
+
+
+def plot_summary():
+    # Evolution of joint positions Plotting
+    fig_joint = plt.figure()
+    ax = fig_joint.add_subplot(111, autoscale_on=False, xlim=(0, 60), ylim=(-1, 2))
+    ax.set_title("Task-Priority (two tasks)")
+    ax.set_xlabel("Time[s]")
+    ax.set_ylabel("Error")
+    ax.grid()
+    plt.plot(timestamp, err1_plot, label="e1 (end-effector position)")
+    plt.plot(timestamp, err2_plot, label="e2 (joint 1 position)")
+
+    ax.legend()
+
+    plt.show()
+
+
+# Run simulation
+animation = anim.FuncAnimation(
+    fig,
+    simulate,
+    np.arange(0, 10, dt),
+    interval=10,
+    blit=True,
+    init_func=init,
+    repeat=True,
+)
+plt.show()
+plot_summary()

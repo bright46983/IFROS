@@ -92,7 +92,7 @@ def DLS(A, damping):
         Returns:
         (Numpy array): inversion of the input matrix
     '''
-    dls = A.T @ np.linalg.inv(A @ A.T + damping**2 * np.eye(6))
+    dls = A.T @ np.linalg.inv(A @ A.T + damping**2 * np.eye(A.shape[0]))
     return dls
 # Extract characteristic points of a robot projected on X-Y plane
 def robotPoints2D(T):

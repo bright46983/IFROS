@@ -61,7 +61,7 @@ def simulate(t):
         q[i] += dt * dq[i]
         #Error Poltting Elements
         norm_err[i].append(np.linalg.norm(err[i]))  # Norm error for each controller
-
+    print(controller(controller_list[0], J[0][:2,:]))
     timestamp.append(t)
 
     # Update drawing 
