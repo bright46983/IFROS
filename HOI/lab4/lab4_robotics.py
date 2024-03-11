@@ -15,7 +15,9 @@ def jacobianLink(T, revolute, link):  # Needed in Exercise 2
     (Numpy array): end-effector Jacobian
     """
     # Code almost identical to the one from lab2_robotics...
-
+    J = jacobian(T, revolute)
+    J[:,link:] = 0
+    return J
 
 """
     Class representing a robotic manipulator.
@@ -102,6 +104,20 @@ class Manipulator:
     def getDOF(self):
         return self.dof
 
+    """
+        Method that returns transformation for a selected link
+    """
+
+    def getLinkTransform(self, link):
+        return self.T[link]
+    
+    """
+        Method that returns jacobian for a selected link
+    """
+
+    def getLinkJacobian(self, link):
+        return jacobianLink(self.T, self.revolute, link)
+    
 
 """
     Base class representing an abstract Task.
@@ -120,6 +136,9 @@ class Task:
     def __init__(self, name, desired):
         self.name = name  # task title
         self.sigma_d = desired  # desired sigma
+        self.K = None
+        self.FeedForwardVel = None
+
 
     """
         Method updating the task variables (abstract).
@@ -167,7 +186,7 @@ class Task:
     """
 
     def setFeedForwardVel(self, value):
-        self.FeedForwardVel = value
+        self.FeedForwardVel = np.ones(self.sigma_d.shape)*value
 
     """
         Method returning the feed-forward velocity.
@@ -180,16 +199,15 @@ class Task:
         Method setting the gain matrix K 
     """
 
-    def getKmatrix(self, value):
-        Kmatrix = value
+    def getKmatrix(self):
+        return self.K 
 
     """
         Method setting the gain matrix K 
     """
 
-    def setKmatrix(self):
-        return self.Kmatrix
-
+    def setKmatrix(self, value):
+        self.K = self.K * value
 
 """
     Subclass of Task, representing the 2D position task.
@@ -197,18 +215,20 @@ class Task:
 
 
 class Position2D(Task):
-    def __init__(self, name, desired):
+    def __init__(self, name, desired, link = 3):
         super().__init__(name, desired)
         self.J = np.zeros(0)
-        self.err = np.zeros((len(desired), 1))  # Initialize with proper dimensions
+        self.err = np.zeros(desired.shape)  # Initialize with proper dimensions
+
+        self.link = link
+
+        self.FeedForwardVel = np.zeros(desired.shape) # 2 x 1
+        self.K = np.eye(len(desired)) # 2 x 2
 
     def update(self, robot):
-        self.J = robot.getEEJacobian()[: len(self.sigma_d), :]  # Update task Jacobian
-        self.err = self.getDesired() - robot.getEETransform()[
-            : len(self.sigma_d), -1
-        ].reshape(
-            self.sigma_d.shape
-        )  # Update task error
+        self.J = robot.getLinkJacobian(self.link)[: len(self.sigma_d), :]  # Update task Jacobian
+        self.err = self.getDesired() - robot.getLinkTransform(self.link)[: len(self.sigma_d), -1].reshape(self.sigma_d.shape)  # Update task error
+        print(self.sigma_d.shape)
 
 
 """
@@ -217,14 +237,19 @@ class Position2D(Task):
 
 
 class Orientation2D(Task):
-    def __init__(self, name, desired):
+    def __init__(self, name, desired, link = 3):
         super().__init__(name, desired)
         self.J = np.zeros((len(desired), 3))  # Initialize with proper dimensions
         self.err = np.zeros(desired.shape)  # Initialize with proper dimensions
+        
+        self.link = link
+
+        self.FeedForwardVel = np.zeros(desired.shape) # just an added velocity value for the joint
+        self.K = np.eye(len(desired)) # just a K value 
 
     def update(self, robot):
-        self.J = robot.getEEJacobian()[-1, :].reshape((1, 3))  # Update task Jacobian
-        T = robot.getEETransform()  # Get Transformations matrix form robot
+        self.J = robot.getLinkJacobian(self.link)[-1, :].reshape((1, 3))  # Update task Jacobian
+        T = robot.getLinkTransform(self.link)  # Get Transformations matrix form robot
         yaw = np.arctan2(T[1, 0], T[0, 0]).reshape(
             self.sigma_d.shape
         )  # Extract yaw from Transformation matrix
@@ -237,16 +262,19 @@ class Orientation2D(Task):
 
 
 class Configuration2D(Task):
-    def __init__(self, name, desired):
+    def __init__(self, name, desired, link = 3):
         super().__init__(name, desired)
         self.J = np.zeros((3, 3))
         self.err = np.zeros(desired.shape)
-        # self.J = # Initialize with proper dimensions
-        # self.err = # Initialize with proper dimensions
 
+        self.link = link
+
+        self.FeedForwardVel = np.zeros(desired.shape)  # 
+        self.K = np.eye(len(desired)) 
+        
     def update(self, robot):
-        self.J = robot.getEEJacobian()[[0, 1, -1], :]
-        T = robot.getEETransform()
+        self.J = robot.getLinkJacobian(self.link)[[0, 1, -1], :]
+        T = robot.getLinkTransform(self.link)
         currentpos = T[:2, -1]
         currentyaw = np.arctan2(T[1, 0], T[0, 0])
         self.err = self.getDesired() - np.block([currentpos, currentyaw]).reshape(
@@ -263,11 +291,15 @@ class Configuration2D(Task):
 
 
 class JointPosition(Task):
-    def __init__(self, name, desired):
+    def __init__(self, name, desired, joint=0):
         super().__init__(name, desired)
-        self.J = np.zeros(3, 1)
+        self.joint = joint
+        self.J = np.zeros((1, 3))
         self.err = np.zeros(desired.shape)
 
+        self.FeedForwardVel = np.zeros(desired.shape)
+        self.K = np.eye(len(desired)) 
+
     def update(self, robot):
-        self.J[0, self.joint] = 1
-        self.err = self.getDesired() - robot.getJointPos(self.joint)
+        self.J[0,self.joint] = 1
+        self.err = self.getDesired() - robot.getJointPos(self.joint).reshape(self.sigma_d.shape)

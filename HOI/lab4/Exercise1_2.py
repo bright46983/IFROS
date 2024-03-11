@@ -14,10 +14,12 @@ robot = Manipulator(d, theta, a, alpha, revolute)  # Manipulator object
 
 # Task hierarchy definition
 tasks = [
-    # Orientation2D("End-effector orientation", np.array([[np.pi]])),
-    # Position2D("End-effector position", np.array([1.0, 0.5]).reshape(2, 1)),
-    Configuration2D("End-effector config", np.array([1.0, 0.5, np.pi]).reshape(3, 1)),
-    # JointPosition("Joint position", np.array([[], np.pi])),
+    
+    Position2D("End-effector position", np.array([1.0, 0.5]).reshape(2, 1), link=3),
+    Orientation2D("End-effector orientation", np.array([[np.pi]]), link=2),
+    #Position2D("End-effector position", np.array([1.0, 0.5]).reshape(2, 1), 1),
+    # Configuration2D("End-effector config", np.array([1.0, 0.5, np.pi]).reshape(3, 1)),
+    #JointPosition("Joint position", np.array([0]),0),
 ]
 
 # Simulation params
@@ -44,7 +46,7 @@ def init():
     line.set_data([], [])
     path.set_data([], [])
     point.set_data([], [])
-    temp = np.vstack((np.random.uniform(-1, 1, size=(2, 1)), np.array([np.pi])))
+    temp = np.random.uniform(-1, 1, size=(2, 1))
     tasks[0].setDesired(temp)
     return line, path, point
 
@@ -63,10 +65,17 @@ def simulate(t):
     # Loop over tasks
     for task in tasks:
         task.update(robot)  # Update task state
+        # Set up K
+        K = 1
+        task.setKmatrix(K)
+        # Set up FFV
+        FFV = 0
+        task.setFeedForwardVel(FFV)
+
         J = task.getJacobian()
         Jbar = J @ P  # Compute augmented Jacobian
-        print((J).shape)
-        dqi = DLS(Jbar, 0.1) @ (task.getError() - (J @ dq))
+        print(task.getError())
+        dqi = DLS(Jbar, 0.1) @ ((task.getKmatrix() @ task.getError()) + task.getFeedForwardVel() - (J @ dq))
         dq += dqi  # Accumulate velocity
         P = P - np.linalg.pinv(Jbar) @ Jbar  # Update null-space projector
     ###
@@ -84,12 +93,7 @@ def simulate(t):
 
     return line, path, point
 
-    # Update Poltting Data
-    err1_plot.append(np.linalg.norm(err1))
-    err2_plot.append(np.linalg.norm(err2))
-    timestamp.append(t + last_time)
-
-    return line, path, point
+    
 
 
 def plot_summary():
