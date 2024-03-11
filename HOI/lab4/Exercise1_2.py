@@ -14,9 +14,10 @@ robot = Manipulator(d, theta, a, alpha, revolute)  # Manipulator object
 
 # Task hierarchy definition
 tasks = [
-    # Position2D("End-effector position", np.array([1.0, 0.5]).reshape(2,1)),
     # Orientation2D("End-effector orientation", np.array([[np.pi]])),
+    # Position2D("End-effector position", np.array([1.0, 0.5]).reshape(2, 1)),
     Configuration2D("End-effector config", np.array([1.0, 0.5, np.pi]).reshape(3, 1)),
+    # JointPosition("Joint position", np.array([[], np.pi])),
 ]
 
 # Simulation params
@@ -43,6 +44,8 @@ def init():
     line.set_data([], [])
     path.set_data([], [])
     point.set_data([], [])
+    temp = np.vstack((np.random.uniform(-1, 1, size=(2, 1)), np.array([np.pi])))
+    tasks[0].setDesired(temp)
     return line, path, point
 
 
@@ -80,6 +83,29 @@ def simulate(t):
     point.set_data(tasks[0].getDesired()[0], tasks[0].getDesired()[1])
 
     return line, path, point
+
+    # Update Poltting Data
+    err1_plot.append(np.linalg.norm(err1))
+    err2_plot.append(np.linalg.norm(err2))
+    timestamp.append(t + last_time)
+
+    return line, path, point
+
+
+def plot_summary():
+    # Evolution of joint positions Plotting
+    fig_joint = plt.figure()
+    ax = fig_joint.add_subplot(111, autoscale_on=False, xlim=(0, 60), ylim=(-1, 2))
+    ax.set_title("Task-Priority (two tasks)")
+    ax.set_xlabel("Time[s]")
+    ax.set_ylabel("Error")
+    ax.grid()
+    plt.plot(timestamp, err1_plot, label="e1 (end-effector position)")
+    plt.plot(timestamp, err2_plot, label="e2 (joint 1 position)")
+
+    ax.legend()
+
+    plt.show()
 
 
 # Run simulation

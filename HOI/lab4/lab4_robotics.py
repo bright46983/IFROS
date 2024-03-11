@@ -162,6 +162,34 @@ class Task:
     def getError(self):
         return self.err
 
+    """
+        Method setting the feed-forward velocity
+    """
+
+    def setFeedForwardVel(self, value):
+        self.FeedForwardVel = value
+
+    """
+        Method returning the feed-forward velocity.
+    """
+
+    def getFeedForwardVel(self):
+        return self.FeedForwardVel
+
+    """
+        Method setting the gain matrix K 
+    """
+
+    def getKmatrix(self, value):
+        Kmatrix = value
+
+    """
+        Method setting the gain matrix K 
+    """
+
+    def setKmatrix(self):
+        return self.Kmatrix
+
 
 """
     Subclass of Task, representing the 2D position task.
@@ -195,9 +223,7 @@ class Orientation2D(Task):
         self.err = np.zeros(desired.shape)  # Initialize with proper dimensions
 
     def update(self, robot):
-        self.J = robot.getEEJacobian()[-1, :].reshape(
-            (len(self.sigma_d), 3)
-        )  # Update task Jacobian
+        self.J = robot.getEEJacobian()[-1, :].reshape((1, 3))  # Update task Jacobian
         T = robot.getEETransform()  # Get Transformations matrix form robot
         yaw = np.arctan2(T[1, 0], T[0, 0]).reshape(
             self.sigma_d.shape
@@ -234,4 +260,14 @@ class Configuration2D(Task):
 """ 
     Subclass of Task, representing the joint position task.
 """
-# class JointPosition(Task):
+
+
+class JointPosition(Task):
+    def __init__(self, name, desired):
+        super().__init__(name, desired)
+        self.J = np.zeros(3, 1)
+        self.err = np.zeros(desired.shape)
+
+    def update(self, robot):
+        self.J[0, self.joint] = 1
+        self.err = self.getDesired() - robot.getJointPos(self.joint)
