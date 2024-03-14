@@ -22,9 +22,17 @@ tasks = [
     #JointPosition("Joint position", np.array([0]),0),
 ]
 
+# Set K matrix for tash 1
+K = 2
+tasks[0].setKmatrix(K)
+# Set up FFV
+FFV = 0.0
+tasks[0].setFeedForwardVel(FFV)
+
 # Simulation params
 dt = 1.0 / 60.0
-
+timestamp = []
+vel_threshold = 1.5
 # Drawing preparation
 fig = plt.figure()
 ax = fig.add_subplot(111, autoscale_on=False, xlim=(-2, 2), ylim=(-2, 2))
@@ -43,11 +51,13 @@ PPy = []
 # Simulation initialization
 def init():
     global tasks
+    global last_time
     line.set_data([], [])
     path.set_data([], [])
     point.set_data([], [])
     temp = np.random.uniform(-1, 1, size=(2, 1))
     tasks[0].setDesired(temp)
+    last_time = timestamp[-1] if timestamp else 0
     return line, path, point
 
 
@@ -55,30 +65,31 @@ def init():
 def simulate(t):
     global tasks
     global robot
-    global PPx, PPy
+    global PPx, PPy, last_time
 
     ### Recursive Task-Priority algorithm
     # Initialize null-space projector
     P = np.eye(robot.getDOF())
     dq = np.zeros((robot.getDOF(), 1))
+    dq_list = []
+    
     # Initialize output vector (joint velocity)
     # Loop over tasks
     for task in tasks:
         task.update(robot)  # Update task state
-        # Set up K
-        K = 1
-        task.setKmatrix(K)
-        # Set up FFV
-        FFV = 0
-        task.setFeedForwardVel(FFV)
-
-        J = task.getJacobian()
+        J = task.getJacobian() # get task Jacobian
         Jbar = J @ P  # Compute augmented Jacobian
-        print(task.getError())
-        dqi = DLS(Jbar, 0.1) @ ((task.getKmatrix() @ task.getError()) + task.getFeedForwardVel() - (J @ dq))
+        dqi = DLS(Jbar, 0.1) @ ((task.getKmatrix() @ task.getError()) + task.getFeedForwardVel() - (J @ dq)) # control equation
         dq += dqi  # Accumulate velocity
         P = P - np.linalg.pinv(Jbar) @ Jbar  # Update null-space projector
+
+        dq_list.append(np.linalg.norm(dqi)) # control memory for velcoity scaling
     ###
+        
+    # Scale velocity
+    max_vel = max(dq_list)
+    if max_vel > vel_threshold:
+        dq = (dq / max_vel) * vel_threshold
 
     # Update robot
     robot.update(dq, dt)
@@ -90,6 +101,7 @@ def simulate(t):
     PPy.append(PP[1, -1])
     path.set_data(PPx, PPy)
     point.set_data(tasks[0].getDesired()[0], tasks[0].getDesired()[1])
+    timestamp.append(t + last_time)
 
     return line, path, point
 
@@ -104,8 +116,8 @@ def plot_summary():
     ax.set_xlabel("Time[s]")
     ax.set_ylabel("Error")
     ax.grid()
-    plt.plot(timestamp, err1_plot, label="e1 (end-effector position)")
-    plt.plot(timestamp, err2_plot, label="e2 (joint 1 position)")
+    plt.plot(timestamp, tasks[0].err_plot, label="e1 ({})".format(tasks[0].name))
+    plt.plot(timestamp, tasks[1].err_plot, label="e2 ({})".format(tasks[1].name))
 
     ax.legend()
 
@@ -123,3 +135,4 @@ animation = anim.FuncAnimation(
     repeat=True,
 )
 plt.show()
+plot_summary()

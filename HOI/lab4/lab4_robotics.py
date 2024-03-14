@@ -138,7 +138,7 @@ class Task:
         self.sigma_d = desired  # desired sigma
         self.K = None
         self.FeedForwardVel = None
-
+        self.err_plot = []
 
     """
         Method updating the task variables (abstract).
@@ -228,7 +228,10 @@ class Position2D(Task):
     def update(self, robot):
         self.J = robot.getLinkJacobian(self.link)[: len(self.sigma_d), :]  # Update task Jacobian
         self.err = self.getDesired() - robot.getLinkTransform(self.link)[: len(self.sigma_d), -1].reshape(self.sigma_d.shape)  # Update task error
-        print(self.sigma_d.shape)
+        
+        #Update norm error plot
+        self.err_plot.append(np.linalg.norm(self.err))
+        
 
 
 """
@@ -255,7 +258,8 @@ class Orientation2D(Task):
         )  # Extract yaw from Transformation matrix
         self.err = self.getDesired() - yaw  # Update task error
 
-
+        #Update norm error plot
+        self.err_plot.append(np.linalg.norm(self.err))
 """
     Subclass of Task, representing the 2D configuration task.
 """
@@ -280,11 +284,9 @@ class Configuration2D(Task):
         self.err = self.getDesired() - np.block([currentpos, currentyaw]).reshape(
             self.sigma_d.shape
         )
-        print(self.err)
-        # self.J = # Update task Jacobian
-        # self.err = # Update task error
-
-
+     
+        #Update norm error plot
+        self.err_plot.append(np.linalg.norm(self.err))
 """ 
     Subclass of Task, representing the joint position task.
 """
@@ -303,3 +305,6 @@ class JointPosition(Task):
     def update(self, robot):
         self.J[0,self.joint] = 1
         self.err = self.getDesired() - robot.getJointPos(self.joint).reshape(self.sigma_d.shape)
+
+        #Update norm error plot
+        self.err_plot.append(np.linalg.norm(self.err))
