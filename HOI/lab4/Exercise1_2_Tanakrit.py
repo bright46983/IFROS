@@ -16,14 +16,14 @@ robot = Manipulator(d, theta, a, alpha, revolute)  # Manipulator object
 tasks = [
     
     Position2D("End-effector position", np.array([1.0, 0.5]).reshape(2, 1), link=3),
-    Orientation2D("End-effector orientation", np.array([[np.pi]]), link=2),
+    #Orientation2D("End-effector orientation", np.array([[0]]), link=3),
     #Position2D("End-effector position", np.array([1.0, 0.5]).reshape(2, 1), 1),
-    # Configuration2D("End-effector config", np.array([1.0, 0.5, np.pi]).reshape(3, 1)),
-    #JointPosition("Joint position", np.array([0]),0),
+    #Configuration2D("End-effector config", np.array([1.0, 0.5, np.pi]).reshape(3, 1)),
+    JointPosition("Joint 1 position", np.array([0]),0),
 ]
 
 # Set K matrix for tash 1
-K = 2
+K = 3
 tasks[0].setKmatrix(K)
 # Set up FFV
 FFV = 0.0
@@ -56,6 +56,7 @@ def init():
     path.set_data([], [])
     point.set_data([], [])
     temp = np.random.uniform(-1, 1, size=(2, 1))
+    #temp = np.random.uniform(-1, 1, size=(3, 1)) # 2D for config
     tasks[0].setDesired(temp)
     last_time = timestamp[-1] if timestamp else 0
     return line, path, point
@@ -111,7 +112,7 @@ def simulate(t):
 def plot_summary():
     # Evolution of joint positions Plotting
     fig_joint = plt.figure()
-    ax = fig_joint.add_subplot(111, autoscale_on=False, xlim=(0, 60), ylim=(-1, 2))
+    ax = fig_joint.add_subplot(111, autoscale_on=False, xlim=(0, 60), ylim=(-1, 3))
     ax.set_title("Task-Priority (two tasks)")
     ax.set_xlabel("Time[s]")
     ax.set_ylabel("Error")
