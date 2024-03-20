@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     int markerId = std::stoi(argv[2]);
     float markerSize = std::stof(argv[3]); // in meters
 
-    std::string cameraParamsFilename = "/home/tanakrit-ubuntu/IFROS/HOPe/pose_estimation/param/intrinsics.txt";
+    std::string cameraParamsFilename = "/home/tanakrit-ubuntu/IFROS/HOPe/aruco_calibration/param/param2.txt";
 
     int dictId;
     if (dictName == "DICT_4X4_50") dictId = cv::aruco::DICT_4X4_50;

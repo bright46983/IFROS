@@ -42,12 +42,6 @@ int main(int argc, char *argv[]) {
     // Set up camera parameters
     cv::Mat cameraMatrix, distCoeffs;
     readCameraParameters(cameraParamsFilename, cameraMatrix, distCoeffs); // This function is implemented in aruco_samples_utility.hpp
-    // Set coordinate system
-    cv::Mat objPoints(4, 1, CV_32FC3);
-    objPoints.ptr<cv::Vec3f>(0)[0] = cv::Vec3f(-markerSize/2.f, markerSize/2.f, 0);
-    objPoints.ptr<cv::Vec3f>(0)[1] = cv::Vec3f(markerSize/2.f, markerSize/2.f, 0);
-    objPoints.ptr<cv::Vec3f>(0)[2] = cv::Vec3f(markerSize/2.f, -markerSize/2.f, 0);
-    objPoints.ptr<cv::Vec3f>(0)[3] = cv::Vec3f(-markerSize/2.f, -markerSize/2.f, 0);
 
 
    // Setup aruco detector object
