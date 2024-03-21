@@ -1,4 +1,4 @@
-from lab4_robotics import * # Includes numpy import
+from lab5_robotics import * # Includes numpy import
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 import matplotlib.patches as patch
@@ -14,17 +14,26 @@ revolute = [True, True, True]  # flags specifying the type of joints
 robot = Manipulator(d, theta, a, alpha, revolute)  # Manipulator object
 vel_threshold = 1.5
 
-# Task hierarchy definition
+# Obstacle definition
 obstacle_pos = np.array([0.0, 1.0]).reshape(2,1)
 obstacle_r = 0.5
 obstacle_pos2 = np.array([0.5, -0.9]).reshape(2,1)
 obstacle_r2 = 0.7
 obstacle_pos3 = np.array([-0.7, -0.8]).reshape(2,1)
 obstacle_r3 = 0.6
-
 obstacles_list = [obstacle_pos, obstacle_pos2, obstacle_pos3]
 obstacles_r_list = [obstacle_r, obstacle_r2, obstacle_r3]
+
+# Joint limits definition
+joint1_min = 0
+joint1_max = np.pi/2
+ee_min = -0.5
+ee_max = 0.5
+
+# Task hierarchy definition
 tasks = [ 
+          JointLimits("Joint1-limits",np.zeros(1), 0, np.array([joint1_min , joint1_max])),
+
           Obstacle2D("Obstacle avoidance", obstacle_pos, np.array([obstacle_r, obstacle_r+0.05])),
           Obstacle2D("Obstacle avoidance", obstacle_pos2, np.array([obstacle_r2, obstacle_r2+0.05])),
           Obstacle2D("Obstacle avoidance", obstacle_pos3, np.array([obstacle_r3, obstacle_r3+0.05])),

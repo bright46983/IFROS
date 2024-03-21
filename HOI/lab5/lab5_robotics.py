@@ -139,7 +139,7 @@ class Task:
         self.K = None
         self.FeedForwardVel = None
         self.err_plot = []
-        self.active = True
+        self.active = 1
 
     """
         Method updating the task variables (abstract).
@@ -197,7 +197,7 @@ class Task:
         return self.FeedForwardVel
 
     """
-        Method setting the gain matrix K 
+        Method getting the gain matrix K 
     """
 
     def getKmatrix(self):
@@ -212,6 +212,9 @@ class Task:
 
     def isActive(self):
         return self.active
+    
+    
+    
 
 """
     Subclass of Task, representing the 2D position task.
@@ -327,12 +330,45 @@ class Obstacle2D(Task):
         self.J = robot.getEEJacobian()[: len(self.sigma_d), :]
         err = robot.getEETransform()[: 2, -1].reshape(self.sigma_d.shape) - self.getDesired() 
         norm_err = np.linalg.norm(err)
-        self.err = err / norm_err   # Update task error
+        self.err = self.active *(err / norm_err)   # Update task error
         
         
         # update active status
-        if not self.active and norm_err <= self.r[0]:
-            self.active = True
-        elif self.active and norm_err >= self.r[1]:
-            self.active = False
+        if self.active == 0 and norm_err <= self.r[0]:
+            self.active = 1
+        elif self.active == 1 and norm_err >= self.r[1]:
+            self.active = 0
+
+class JointLimits(Task):
+    def __init__(self, name, desired, joint=1, limit=np.array([0, np.pi/2])):
+        super().__init__(name, desired)
+        self.joint = joint
+        self.J = np.zeros((1, 3))
+        self.err = None
+        self.err_plot = None
+        self.K = np.eye(len(desired))
+        self.FeedForwardVel = np.zeros(desired.shape)
+        
+        self.qmin = limit[0]
+        self.qmax = limit[1]
+        self.gamma = np.pi/18 # 5 degrees
+        self.alpha = np.pi/36 # 2.5 degrees
+        
+        
+    
+    def update(self,robot):
+        self.J[0,self.joint] = 1
+        self.err = np.array([self.active]) 
+        q = robot.getJointPos(self.joint) 
+        
+        # update active status>
+        if self.active == 0 and q >= self.qmax - self.alpha:
+            self.active = -1
+        elif self.active == 0 and q <= self.qmin + self.alpha:
+            self.active = 1
+        elif self.active == -1 and q <= self.qmax - self.gamma:
+            self.active = 0
+        elif self.active == 1 and q >= self.qmin + self.gamma:
+            self.active = 0
+
         
