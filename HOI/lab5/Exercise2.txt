@@ -32,11 +32,11 @@ joint1_max = 0.5
 
 # Task hierarchy definition
 tasks = [ 
-        #   JointLimits("Joint1-limits",np.zeros(1), 0, np.array([joint1_min , joint1_max])),
+        JointLimits("Joint1-limits",np.zeros(1), 0, np.array([joint1_min , joint1_max])),
 
-          Obstacle2D("Obstacle avoidance", obstacle_pos, np.array([obstacle_r, obstacle_r+0.025])),
-          Obstacle2D("Obstacle avoidance", obstacle_pos2, np.array([obstacle_r2, obstacle_r2+0.025])),
-          Obstacle2D("Obstacle avoidance", obstacle_pos3, np.array([obstacle_r3, obstacle_r3+0.025])),
+        #   Obstacle2D("Obstacle avoidance", obstacle_pos, np.array([obstacle_r, obstacle_r+0.025])),
+        #   Obstacle2D("Obstacle avoidance", obstacle_pos2, np.array([obstacle_r2, obstacle_r2+0.025])),
+        #   Obstacle2D("Obstacle avoidance", obstacle_pos3, np.array([obstacle_r3, obstacle_r3+0.025])),
            Position2D("End-effector position", np.array([-1, 1]).reshape(2,1))
         ] 
 
@@ -54,8 +54,8 @@ ax.grid()
 ax.set_xlabel('x[m]')
 ax.set_ylabel('y[m]')
 color = ['red', 'green', 'blue']
-for i in range(len(obstacles_list)):
-    ax.add_patch(patch.Circle(obstacles_list[i].flatten(), obstacles_r_list[i], color=color[i], alpha=0.3))
+# for i in range(len(obstacles_list)):
+#     ax.add_patch(patch.Circle(obstacles_list[i].flatten(), obstacles_r_list[i], color=color[i], alpha=0.3))
 line, = ax.plot([], [], 'o-', lw=2) # Robot structure
 path, = ax.plot([], [], 'c-', lw=1) # End-effector path
 point, = ax.plot([], [], 'rx') # Target
@@ -172,4 +172,4 @@ def plot_summary_joint():
 animation = anim.FuncAnimation(fig, simulate, np.arange(0, 10, dt), 
                                 interval=10, blit=True, init_func=init, repeat=True)
 plt.show()
-plot_summary()
+plot_summary_joint()
