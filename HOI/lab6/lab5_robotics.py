@@ -277,7 +277,8 @@ class Configuration2D(Task):
         super().__init__(name, desired)
         self.J = np.zeros((3, 3))
         self.err = np.zeros(desired.shape)
-
+        self.err_plot_xy = []
+        self.err_plot_yaw = []
         self.link = link
 
         self.FeedForwardVel = np.zeros(desired.shape)  # 
@@ -289,9 +290,9 @@ class Configuration2D(Task):
         currentpos = T[:2, -1]
         currentyaw = np.arctan2(T[1, 0], T[0, 0])
         self.err = self.getDesired() - np.block([currentpos, currentyaw]).reshape(self.sigma_d.shape)
-     
         #Update norm error plot
-        self.err_plot.append(np.linalg.norm(self.err))
+        self.err_plot_xy.append(np.linalg.norm(self.err[:2]))
+        self.err_plot_yaw.append(abs(self.err[-1]))
 """ 
     Subclass of Task, representing the joint position task.
 """
@@ -308,6 +309,7 @@ class JointPosition(Task):
         self.K = np.eye(len(desired)) 
 
     def update(self, robot):
+        self.J = np.zeros(robot.getDOF())
         self.J[0,self.joint] = 1
         self.err = self.getDesired() - robot.getJointPos(self.joint).reshape(self.sigma_d.shape)
 
@@ -345,7 +347,6 @@ class JointLimits(Task):
         self.joint = joint
         self.J = np.zeros((1, 3))
         self.err = None
-        self.err_plot = None
         self.K = np.eye(len(desired))
         self.FeedForwardVel = np.zeros(desired.shape)
         
@@ -357,9 +358,12 @@ class JointLimits(Task):
         
     
     def update(self,robot):
+        self.J = np.zeros(robot.getDOF()).reshape(1,-1)
         self.J[0,self.joint] = 1
+        print(self.J)
         self.err = np.array([self.active]) 
         q = robot.getJointPos(self.joint) 
+        self.err_plot.append(q[0])
         
         # update active status>
         if self.active == 0 and q >= self.qmax - self.alpha:

@@ -24,7 +24,7 @@ def DH(d, theta, a, alpha):
                    [0, 0, 0, 1]])
     return T
 
-def kinematics(d, theta, a, alpha):
+def kinematics(d, theta, a, alpha, Tb = np.eye(4)):
     '''
         Functions builds a list of transformation matrices, for a kinematic chain,
         descried by a given set of Denavit-Hartenberg parameters. 
@@ -39,7 +39,7 @@ def kinematics(d, theta, a, alpha):
         Returns:
         (list of Numpy array): list of transformations along the kinematic chain (from the base frame)
     '''
-    T = [np.eye(4)] # Base transformation
+    T = [Tb] # Base transformation
     # For each set of DH parameters:
     # 1. Compute the DH transformation matrix.
     # 2. Compute the resulting accumulated transformation from the base frame.
@@ -77,11 +77,11 @@ def jacobian(T, revolute):
         if revolute[i]:
             J[:,i] = np.concatenate((np.cross(z,o),z)).reshape((1,6)) # a column for revolute joint
         else:
-            J[:,i] = np.concatenate((np.cross(z,o),np.zeros((3,1)) )).reshape((1,6)) # a column for prismatic joint
+            J[:,i] = np.concatenate((z.reshape(-1,1),np.zeros((3,1)) )).reshape((1,6)) # a column for prismatic joint
     return J
 
 # Damped Least-Squares
-def DLS(A, damping):
+def DLS(A, damping, W = np.eye(5)):
     '''
         Function computes the damped least-squares (DLS) solution to the matrix inverse problem.
 
@@ -92,7 +92,7 @@ def DLS(A, damping):
         Returns:
         (Numpy array): inversion of the input matrix
     '''
-    dls = A.T @ np.linalg.inv(A @ A.T + damping**2 * np.eye(A.shape[0]))
+    dls = np.linalg.inv(W)@ A.T @ np.linalg.inv(A@np.linalg.inv(W)@A.T + damping**2 * np.eye(A.shape[0]))
     return dls
 # Extract characteristic points of a robot projected on X-Y plane
 def robotPoints2D(T):
