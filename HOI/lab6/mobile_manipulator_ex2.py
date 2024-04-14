@@ -15,9 +15,8 @@ vel_threshold = 1.5
 timestamp = []
 dq_plot = []
 # DOF weights
-W = np.eye(robot.getDOF())
-W[0,0] = 6
-W[1,1] = 6
+W = np.diag((1,1,1,1,5))
+
 
 # Joint limits definition
 joint1_min = -0.5

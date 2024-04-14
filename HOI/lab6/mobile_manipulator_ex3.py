@@ -41,7 +41,7 @@ tasks = [
         ] 
 
 # Simulation params
-dt = 1.0/60.0
+dt = 0.18
 
 # Drawing preparation
 fig = plt.figure()
@@ -106,7 +106,7 @@ def simulate(t):
 
 
     # Update robot
-    robot.update(dq, dt, "ROTATE")
+    robot.update(dq, dt, "TRANSLATION")
     
     
     # Update drawing
@@ -125,6 +125,21 @@ def simulate(t):
     timestamp.append(t + last_time)
 
     return line, veh, path, point
+
+def plot_summary():
+    # Evolution of joint positions Plotting
+    fig_joint = plt.figure()
+    ax = fig_joint.add_subplot(111, autoscale_on=False, xlim=(0, 60), ylim=(-0.2, 2.6))
+    ax.set_title("Error Plot")
+    ax.set_xlabel("Time[s]")
+    ax.set_ylabel("Error")
+    ax.grid()
+    plt.plot(timestamp, tasks[-1].err_plot_xy, label="e1 (end-effector poisiton)")
+    plt.plot(timestamp, tasks[-1].err_plot_yaw, label="e2 (end-effector orientation)")
+
+    ax.legend()
+
+    plt.show()
 
 def plot_summary_mobile():
     # Evolution of joint positions Plotting
@@ -151,4 +166,5 @@ def plot_summary_mobile():
 animation = anim.FuncAnimation(fig, simulate, np.arange(0, 10, dt), 
                                 interval=10, blit=True, init_func=init, repeat=True)
 plt.show()
+plot_summary()
 plot_summary_mobile()

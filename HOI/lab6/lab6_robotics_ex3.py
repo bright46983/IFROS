@@ -55,13 +55,13 @@ class MobileManipulator:
         if priority == "ROTATE":
             # Update orientation
             self.eta[2,0] =  yaw_1 + theta
-            self.eta[0,0] =  x_1 + d*np.cos(self.eta[2,0])  #xbc oplus equation
+            self.eta[0,0] =  x_1 + d*np.cos(self.eta[2,0]) 
             self.eta[1,0] =  y_1 + d*np.sin(self.eta[2,0])
             
         
         elif priority == "TRANSLATE":
             # Update position
-            self.eta[0,0] =  x_1 + d*np.cos(yaw_1)  #xbc oplus equation
+            self.eta[0,0] =  x_1 + d*np.cos(yaw_1) 
             self.eta[1,0] =  y_1 + d*np.sin(yaw_1)
             self.eta[2,0] =  yaw_1 + theta
             
@@ -70,8 +70,8 @@ class MobileManipulator:
             arc_radius = dQ[1,0]/dQ[0,0]
 
             # Update position and orientation
-            self.eta[0,0] = x_1 + arc_radius * (np.sin(yaw_1 + theta) - np.sin(yaw_1))  # Calculate new x position
-            self.eta[1,0] = y_1 + arc_radius * (-np.cos(yaw_1 + theta) + np.cos(yaw_1))  # Calculate new y position
+            self.eta[0,0] = x_1 + arc_radius * (np.sin(yaw_1 + theta) - np.sin(yaw_1))  
+            self.eta[1,0] = y_1 + arc_radius * (-np.cos(yaw_1 + theta) + np.cos(yaw_1))  
             self.eta[2,0] = yaw_1 + theta  # Update orientation
 
     
